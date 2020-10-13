@@ -4,7 +4,11 @@ Potentially inactive CPE analysis tool is an offline analysis tool by using pand
 
 ## License
 
-© Contributors, 2020. Licensed under an Apache-2 license.
+Licensed under an Apache-2 license.
+
+## Copyright
+
+Copyright (c) Huawei Technologies Co., Ltd.
 
 ## Requirements
 
