@@ -16,6 +16,10 @@
 from src.postEva import util
 from src.setting import setting
 
+from src.logger_setting.my_logger import get_logger
+
+logger = get_logger()
+
 
 def get_capacity_data():
     capacity_df = util.get_df(setting.capa_data_path)[setting.parameter_json['capacity_columns']]

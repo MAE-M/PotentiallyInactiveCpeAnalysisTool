@@ -25,6 +25,10 @@ from src.potThread import potThread
 import time
 import multiprocessing
 
+from src.logger_setting.my_logger import get_logger
+
+logger = get_logger()
+
 
 def get_month_data(first_day, last_day, columns=setting.month_column_name):
     all_file = week_extract.get_file_by_range(first_day, last_day)

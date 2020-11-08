@@ -21,7 +21,7 @@ from src.setting import setting
 class Root:
     def __init__(self):
         self.root = Tk()
-        self.root.title("Potentially inactive CPE analysis Tool V1.0.3")
+        self.root.title("Potentially inactive CPE analysis Tool V1.0.4")
 
         # 获取屏幕的长和宽
         root_window_width = self.root.winfo_screenwidth()
@@ -35,7 +35,8 @@ class Root:
         place_height = root_window_height // 2
 
         # 初始打开的时候，放置的位置置于屏幕中央,需要把起始像素点向上和向左移动一半
-        self.root.geometry("{}x{}+{}+{}".format(place_width, place_height, place_width // 2, place_height // 2))
+        self.root.geometry(
+            "{}x{}+{}+{}".format(place_width, place_height + place_height // 4, place_width // 2, place_height // 2))
 
     def get_root_object(self):
         return self.root

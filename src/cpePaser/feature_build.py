@@ -16,6 +16,7 @@
 from src.cpePaser import week_extract
 from src.cpePaser import day_extract
 from src.cpePaser import month_extract
+from src.cpePaser import extract_data
 import os
 from src.compress import compress
 import pandas as pd
@@ -24,6 +25,9 @@ from src.timeOperator import timeOpt
 import time
 import multiprocessing
 
+from src.logger_setting.my_logger import get_logger
+
+logger = get_logger()
 
 MONTH1 = '1'
 MONTH2 = '2'
@@ -35,10 +39,8 @@ MAX_INVALID_VALUE = 9999
 def get_data_by_range(first_day, last_day):
     df = pd.DataFrame(columns=setting.month_column_name)
     date_file_map = week_extract.get_date_map()
-    print(date_file_map)
     for k, v in date_file_map.items():
         if timeOpt.is_in_time(k, first_day, last_day):
-            print(v)
             day_df = pd.read_csv(v, error_bad_lines=False, index_col=False)[setting.month_column_name]
             day_df['date'] = k
             df = df.append(day_df)
@@ -47,13 +49,11 @@ def get_data_by_range(first_day, last_day):
 
 def build_feature(df):
     start_day = week_extract.get_min_month()
-    print("begin build_feature")
     df_train = df[(df['date'] >= start_day) & (df['date'] < timeOpt.add_months(start_day, 2))]
     df_pre = df[(df['date'] >= timeOpt.add_months(start_day, 1)) & (df['date'] < timeOpt.add_months(start_day, 3))]
     df_for_churn = set(
         df[(df['date'] >= timeOpt.add_months(start_day, 2)) & (df['date'] < timeOpt.add_months(start_day, 3))][
-            'esn'].values)
-
+            'esn'].astype('str').values)
     compress.empty_folder(setting.model_path)
     train_result_df = build(df_train, df_for_churn, TRAIN)
     train_result_df.to_csv(os.path.join(setting.model_path, r"trainData.csv"), index=False)
@@ -64,11 +64,9 @@ def build_feature(df):
 
 
 def build(data, not_churn_esn, build_type):
-    print("begin build")
-    df_rsrp_sinr = get_rsrp_df(data)
+    df_rsrp_sinr = get_all_data_df(data)
 
     result_df = calc_week(data, build_type)
-
     df_month1 = calc_month(data, MONTH1, build_type)
     df_month2 = calc_month(data, MONTH2, build_type)
     result_df = merge_data(result_df, df_month1)
@@ -117,16 +115,19 @@ def calc_compare(data1, data2):
         return (data2 - data1) / data1
 
 
-def get_rsrp_df(df):
-    train_group_month = day_extract.groupby_calc(df).apply(calc_rsrp_month).reset_index(drop=True)
-    df = pd.DataFrame(train_group_month)
-    return df
+def get_all_data_df(df):
+    train_group_month = day_extract.groupby_calc(df).apply(calc_all_data).reset_index(drop=True)
+    return train_group_month
 
 
-def calc_rsrp_month(df):
+def calc_all_data(df):
     esn = df['esn'].values
     rsrp_sinr = month_extract.calc_rsrp_sinr(df)
+    ecgi = day_extract.get_main_cell(df['ECGI'].values)
+    ecgi_id = extract_data.PAT_NUM.findall(ecgi) if ecgi != setting.INVALID_STRING else ["-", "-"]
     data = {'esn': esn[0],
+            'ENODEBID': ecgi_id[0],
+            'CELLID': ecgi_id[1],
             'MinRSRP': rsrp_sinr['MinRSRP'],
             'MaxRSRP': rsrp_sinr['MaxRSRP'],
             'AvgRSRP': rsrp_sinr['AvgRSRP'],
@@ -148,10 +149,10 @@ def calc_week(df, build_type):
     for week in week_list:
         week_df = df[(df['date'] >= week[1]) & (df['date'] < week[2])]
         grouped = day_extract.groupby_calc(week_df).apply(week_extract.calc_week_data).reset_index(drop=True)
-        week_df = pd.DataFrame(grouped).rename(columns={'TotalDownload': 'TotalDownloadWeek' + str(week[0]),
+        grouped = pd.DataFrame(grouped).rename(columns={'TotalDownload': 'TotalDownloadWeek' + str(week[0]),
                                                         'TotalUpload': 'TotalUploadWeek' + str(week[0]),
                                                         'TotalConnectTime': 'TotalConnectTimeWeek' + str(week[0])})
-        result_df = merge_data(result_df, week_df)
+        result_df = merge_data(result_df, grouped)
     return result_df
 
 
@@ -165,9 +166,8 @@ def calc_month(df, month_type, build_type):
     else:
         df_month = df[
             (df['date'] >= timeOpt.add_months(start_day, 2)) & (df['date'] < timeOpt.add_months(start_day, 3))]
-
     group_month1 = day_extract.groupby_calc(df_month).apply(month_extract.calc_month_data).reset_index(drop=True)
-    df = pd.DataFrame(group_month1)\
+    df = pd.DataFrame(group_month1) \
         .rename(columns={'activeDay': 'activeDayMonth' + month_type,
                          'totalConnectTime': 'totalConnectTimeMonth' + month_type,
                          'dlTraffic': 'dlTrafficMonth' + month_type,

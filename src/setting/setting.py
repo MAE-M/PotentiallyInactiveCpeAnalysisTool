@@ -18,6 +18,8 @@ import os
 import sys
 import json
 
+import numpy as np
+
 if hasattr(sys, '_MEIPASS'):
     app_path = os.path.dirname(os.path.realpath(sys.executable))
 else:
@@ -25,6 +27,8 @@ else:
     app_path = os.path.abspath(os.path.join(app_path, ".."))
 
 setting_path = os.path.join(app_path, 'setting')
+
+my_logger_path = os.path.abspath(os.path.join(os.path.join(setting_path, '..'), 'logger_setting'))
 
 template_path = os.path.join(setting_path, 'template')
 template_file = os.path.join(template_path, 'LTE_template.zip')
@@ -66,7 +70,6 @@ ratChoice_pady_in_1920x1080_pixel = 1
 log_text_in_1920x1080_pixel_width = 100
 log_text_in_1920x1080_pixel_height = 20
 
-
 thre_template_file_name = 'Performance_Evaluation_Threshold_Template_V1.csv'
 thre_template_file = os.path.join(template_path, thre_template_file_name)
 thre_data_path = os.path.join(setting_path, 'thresholdParam')
@@ -82,6 +85,9 @@ data_path = os.path.join(app_path, 'data')
 if not os.path.exists(data_path):
     os.mkdir(data_path)
 
+if not os.path.exists(my_logger_path):
+    os.mkdir(my_logger_path)
+
 post_eva_path = os.path.join(data_path, 'postEva')
 
 column_name = ['collectTime', 'esn', 'TotalDownload', 'TotalUpload', 'TotalConnectTime', 'MaxDLThroughput',
@@ -89,7 +95,7 @@ column_name = ['collectTime', 'esn', 'TotalDownload', 'TotalUpload', 'TotalConne
                'MSISDN', 'ECGI', 'HostNumberOfEntries']
 
 month_column_name = ['esn', 'TotalDownload', 'TotalUpload', 'TotalConnectTime', 'AvgRSRP', 'isActive', 'MinRSRP',
-                     'CntSINR', 'CntRSRP', 'AvgSINR', 'MinSINR', 'MaxSINR', 'MaxRSRP']
+                     'CntSINR', 'CntRSRP', 'AvgSINR', 'MinSINR', 'MaxSINR', 'MaxRSRP', 'ECGI']
 
 parameter_path = os.path.join(setting_path, 'parameter.json')
 
@@ -141,7 +147,6 @@ def update_param_json(name, value):
 
 parameter_json = load_parameter()
 
-
 xgboost_columns = ['esn', 'TotalDownloadWeek1', 'TotalUploadWeek1', 'TotalConnectTimeWeek1', 'TotalDownloadWeek2',
                    'TotalUploadWeek2', 'TotalConnectTimeWeek2', 'TotalDownloadWeek3', 'TotalUploadWeek3',
                    'TotalConnectTimeWeek3', 'TotalDownloadWeek4', 'TotalUploadWeek4', 'TotalConnectTimeWeek4',
@@ -160,7 +165,7 @@ xgboost_columns = ['esn', 'TotalDownloadWeek1', 'TotalUploadWeek1', 'TotalConnec
                    'ulTrafficMonth2Compare1', 'dlTrafficPerdayMonth2Compare1', 'ulTrafficPerdayMonth2Compare1',
                    'connectTimeMonth2Compare1', 'ulDlTrafficPerdayMonth2Compare1', 'dlTrafficWeek9Compare8',
                    'dlTrafficWeek8Compare7', 'ulTrafficWeek9Compare8', 'ulTrafficWeek8Compare7',
-                   'connectTimeWeek9Compare8', 'connectTimeWeek8Compare7']
+                   'connectTimeWeek9Compare8', 'connectTimeWeek8Compare7', 'ENODEBID', 'CELLID']
 
 if __name__ == '__main__':
     print(gb)

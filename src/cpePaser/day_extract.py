@@ -14,146 +14,47 @@
 #  limitations under the License.
 
 import os
-import pandas as pd
-from src.setting import setting
-import numpy as np
 import time
-from src.compress import compress
+from typing import Dict, List
+
+import numpy as np
+import pandas as pd
 from collections import Counter
+
+from src.compress import compress
+# 日志器
+from src.logger_setting.my_logger import get_logger
+from src.setting import setting
+
+LOGGER = get_logger()
 
 
 def groupby_calc(df):
+    df['esn'] = df['esn'].astype('str')
     df = df.groupby(['esn'])
     return df
 
 
-def calc_total(total_value):
+def calc_total(series):
+    series = series.values
     count = 0
-    for d in range(len(total_value)):
-        if d < len(total_value) - 1:
-            if total_value[d] == setting.INVALID_VALUE or total_value[d+1] == setting.INVALID_VALUE:
+    for d in range(len(series)):
+        if d < len(series) - 1:
+            if pd.isna(series[d]) or pd.isna(series[d + 1]):
                 continue
-            if float(total_value[d]) <= float(total_value[d + 1]):
-                count += float(total_value[d + 1]) - float(total_value[d])
+            if float(series[d]) <= float(series[d + 1]):
+                count += float(series[d + 1]) - float(series[d])
             else:
-                count += int(total_value[d + 1])
-    return str(count)
+                count += float(series[d + 1])
+    return count
 
 
-def calc_sort_collect_time(df):
-    df['collectTime'] = pd.to_datetime(df['collectTime'])
-    df = df.sort_values('collectTime')[['esn', 'TotalDownload', 'TotalUpload', 'TotalConnectTime', 'ModelName', 'IMSI',
-                                        'IMEI', 'MSISDN', 'collectTime']].fillna(0)
-    newst_cpemodel = df['ModelName'].values[-1]
-    newst_imsi = df['IMSI'].values[-1]
-    newst_imei = df['IMEI'].values[-1]
-    newst_msisdn = df['MSISDN'].values[-1]
-    total_connect_time = calc_total(df['TotalConnectTime'].values)
-    total_upload = calc_total(df['TotalUpload'].values)
-    total_download = calc_total(df['TotalDownload'].values)
-
-    return {'TotalDownload': [total_download],
-            'TotalUpload': [total_upload],
-            'TotalConnectTime': [total_connect_time],
-            'ModelName': [newst_cpemodel],
-            'IMSI': [newst_imsi],
-            'IMEI': [newst_imei],
-            'MSISDN': [newst_msisdn]}
-
-
-def calc_day_data(df):
-    esn = df['esn'].values
-    rsrp = list(filter(lambda x: int(x) != setting.INVALID_VALUE, df['RSRP'].values))
-    max_rsrp = get_max(rsrp)
-    min_rsrp = get_min(rsrp)
-    sum_rsrp = get_sum(rsrp)
-    cnt_rsrp = len(rsrp)
-
-    cqi = list(filter(lambda x: int(x) != setting.INVALID_VALUE, df['CQI'].values))
-    max_cqi = get_max(cqi)
-    min_cqi = get_min(cqi)
-    sum_cqi = get_sum(cqi)
-    cnt_cqi = len(cqi)
-
-    rsrq = list(filter(lambda x: int(x) != setting.INVALID_VALUE, df['RSRQ'].values))
-    max_rsrq = get_max(rsrq)
-    min_rsrq = get_min(rsrq)
-    sum_rsrq = get_sum(rsrq)
-    cnt_rsrq = len(rsrq)
-
-    rssi = list(filter(lambda x: int(x) != setting.INVALID_VALUE, df['RSSI'].values))
-    max_rssi = get_max(rssi)
-    min_rssi = get_min(rssi)
-    sum_rssi = get_sum(rssi)
-    cnt_rssi = len(rssi)
-
-    sinr = list(filter(lambda x: int(x) != setting.INVALID_VALUE, df['SINR'].values))
-    max_sinr = get_max(sinr)
-    min_sinr = get_min(sinr)
-    sum_sinr = get_sum(sinr)
-    cnt_sinr = len(sinr)
-
-    wifi = list(df['WiFiUserQty'].dropna().values)
-    sum_wifi = get_sum(wifi)
-    cnt_wifi = len(wifi)
-    host = list(df['HostNumberOfEntries'].dropna().values)
-    sum_host = get_sum(host)
-    cnt_host = len(host)
-
-    dl_throughput = list(filter(lambda x: x != setting.INVALID_VALUE, df['MaxDLThroughput'].values))
-    sum_dl_throughput = get_sum(dl_throughput)
-    cnt_dl_throughput = len(dl_throughput)
-
-    ul_throughput = list(filter(lambda x: x != setting.INVALID_VALUE, df['MaxULThroughput'].values))
-    sum_ul_throughput = get_sum(ul_throughput)
-    cnt_ul_throughput = len(ul_throughput)
-
-    total_value = calc_sort_collect_time(df)
-    if float(total_value['TotalDownload'][0]) / setting.mb > 10:
-        is_active = 1
+def is_active(series):
+    series = calc_total(series)
+    if float(series) / setting.mb > 10:
+        return 1
     else:
-        is_active = 0
-
-    data = {'esn': esn[0],
-            'MaxRSRP': [max_rsrp],
-            'MinRSRP': [min_rsrp],
-            'AvgRSRP': [sum_rsrp],
-            'CntRSRP': [cnt_rsrp],
-            'MaxCQI': [max_cqi],
-            'MinCQI': [min_cqi],
-            'AvgCQI': [sum_cqi],
-            'CntCQI': [cnt_cqi],
-            'MaxRSRQ': [max_rsrq],
-            'MinRSRQ': [min_rsrq],
-            'AvgRSRQ': [sum_rsrq],
-            'CntRSRQ': [cnt_rsrq],
-            'MaxRSSI': [max_rssi],
-            'MinRSSI': [min_rssi],
-            'AvgRSSI': [sum_rssi],
-            'CntRSSI': [cnt_rssi],
-            'MaxSINR': [max_sinr],
-            'MinSINR': [min_sinr],
-            'AvgSINR': [sum_sinr],
-            'CntSINR': [cnt_sinr],
-            'TotalDownload': total_value['TotalDownload'],
-            'TotalUpload': total_value['TotalUpload'],
-            'TotalConnectTime': total_value['TotalConnectTime'],
-            'ModelName': total_value['ModelName'],
-            'IMSI': total_value['IMSI'],
-            'IMEI': total_value['IMEI'],
-            'MSISDN': total_value['MSISDN'],
-            'isActive': [is_active],
-            'AvgDlThroughput': [sum_dl_throughput],
-            'CntDlThroughput': [cnt_dl_throughput],
-            'AvgUlThroughput': [sum_ul_throughput],
-            'CntUlThroughput': [cnt_ul_throughput],
-            'WiFiUserQty': [sum_wifi],
-            'CntWiFiUserQty': [cnt_wifi],
-            'HostNumberOfEntries': [sum_host],
-            'CntHostNumberOfEntries': [cnt_host]}
-
-    result = pd.DataFrame(data)
-    return result
+        return 0
 
 
 def get_max(series):
@@ -207,33 +108,102 @@ def get_std(series):
 
 
 def get_all_day():
-    all_day = compress.get_all_csv_file(os.path.join(setting.data_path, 'extractData'))
+    all_day_file = compress.get_all_csv_file(os.path.join(setting.data_path, 'extractData'))
     day_list = []
-    for day in all_day:
-        day_list.append(day.split("_")[0].split("\\")[-1])
+    for file in all_day_file:
+        day_list.append(os.path.split(file)[1].split("\\")[-1].split('_')[0])
     return list(set(day_list))
 
 
-def merge_day_data(day):
-    print(day)
-    df = pd.DataFrame(columns=setting.parameter_json["extract_data_columns"])
-    all_file = compress.get_all_csv_file(os.path.join(setting.data_path, 'extractData'))
-    all_day_file = list(filter(lambda x: day in x, all_file))
+def merge_day_data(day_dict: Dict[str, List[str]]):
+    for day in day_dict.keys():
+        file_list: List[str] = day_dict.get(day)
+        df = pd.concat(pd.read_csv(file, error_bad_lines=False, index_col=False) for file in file_list)
+        df.columns = setting.parameter_json["extract_data_columns"]
+        df = df.sort_values('collectTime', ascending=True)
+        # 把-9999变成了NaN,但是原来是空的值，在读进来的时候已经变成NaN了，所有空值和-9999都变成了NaN
+        df = df.replace(setting.INVALID_VALUE, np.nan)
+        grouped = groupby_calc(df).agg(
+            MaxRSRP=pd.NamedAgg(column='RSRP', aggfunc=max),
+            MinRSRP=pd.NamedAgg(column='RSRP', aggfunc=min),
+            AvgRSRP=pd.NamedAgg(column='RSRP', aggfunc=sum),
+            CntRSRP=pd.NamedAgg(column='RSRP', aggfunc="count"),
+            MaxCQI=pd.NamedAgg(column='CQI', aggfunc=max),
+            MinCQI=pd.NamedAgg(column='CQI', aggfunc=min),
+            AvgCQI=pd.NamedAgg(column='CQI', aggfunc=sum),
+            CntCQI=pd.NamedAgg(column='CQI', aggfunc="count"),
+            MaxRSRQ=pd.NamedAgg(column='RSRQ', aggfunc=max),
+            MinRSRQ=pd.NamedAgg(column='RSRQ', aggfunc=min),
+            AvgRSRQ=pd.NamedAgg(column='RSRQ', aggfunc=sum),
+            CntRSRQ=pd.NamedAgg(column='RSRQ', aggfunc="count"),
+            MaxRSSI=pd.NamedAgg(column='RSSI', aggfunc=max),
+            MinRSSI=pd.NamedAgg(column='RSSI', aggfunc=min),
+            AvgRSSI=pd.NamedAgg(column='RSSI', aggfunc=sum),
+            CntRSSI=pd.NamedAgg(column='RSSI', aggfunc="count"),
+            MaxSINR=pd.NamedAgg(column='SINR', aggfunc=max),
+            MinSINR=pd.NamedAgg(column='SINR', aggfunc=min),
+            AvgSINR=pd.NamedAgg(column='SINR', aggfunc=sum),
+            CntSINR=pd.NamedAgg(column='SINR', aggfunc="count"),
+            TotalDownload=pd.NamedAgg(column='TotalDownload', aggfunc=calc_total),
+            TotalUpload=pd.NamedAgg(column='TotalUpload', aggfunc=calc_total),
+            TotalConnectTime=pd.NamedAgg(column='TotalConnectTime', aggfunc=calc_total),
+            ModelName=pd.NamedAgg(column='ModelName', aggfunc=lambda x: x.iloc[-1]),
+            IMSI=pd.NamedAgg(column='IMSI', aggfunc=lambda x: x.iloc[-1]),
+            IMEI=pd.NamedAgg(column='IMEI', aggfunc=lambda x: x.iloc[-1]),
+            MSISDN=pd.NamedAgg(column='MSISDN', aggfunc=lambda x: x.iloc[-1]),
+            isActive=pd.NamedAgg(column='TotalDownload', aggfunc=is_active),
+            AvgDlThroughput=pd.NamedAgg(column='MaxDLThroughput', aggfunc=sum),
+            CntDlThroughput=pd.NamedAgg(column='MaxDLThroughput', aggfunc="count"),
+            AvgUlThroughput=pd.NamedAgg(column='MaxULThroughput', aggfunc=sum),
+            CntUlThroughput=pd.NamedAgg(column='MaxULThroughput', aggfunc="count"),
+            WiFiUserQty=pd.NamedAgg(column='WiFiUserQty', aggfunc=sum),
+            CntWiFiUserQty=pd.NamedAgg(column='WiFiUserQty', aggfunc="count"),
+            HostNumberOfEntries=pd.NamedAgg(column='HostNumberOfEntries', aggfunc=sum),
+            CntHostNumberOfEntries=pd.NamedAgg(column='HostNumberOfEntries', aggfunc="count"),
+            ECGI=pd.NamedAgg(column='ECGI', aggfunc=get_main_cell),)
+
+        grouped[['TotalDownload', 'TotalUpload', 'TotalConnectTime', 'ModelName', 'IMSI',
+                 'IMEI', 'MSISDN']] = grouped.sort_values('esn')[
+            ['TotalDownload', 'TotalUpload', 'TotalConnectTime', 'ModelName', 'IMSI',
+             'IMEI', 'MSISDN']].fillna(0)
+
+        grouped = grouped.reset_index()
+        grouped['date'] = day
+        # 除了 'TotalDownload', 'TotalUpload', 'TotalConnectTime', 'ModelName', 'IMSI', 'IMEI', 'MSISDN' 这几列
+        # 其他列的nan将转换还原为setting.INVALID_VALUE, 也就是-9999
+        grouped = grouped.replace(np.nan, setting.INVALID_VALUE)
+        grouped.to_csv(os.path.join(setting.data_path, 'day', day + r".csv"), index=False)
+
+
+# return a dictionary with:
+# key: date
+# value: list of filenames of this date
+def get_day_df_dict() -> Dict[str, List[str]]:
+    all_day_file = compress.get_all_csv_file(os.path.join(setting.data_path, 'extractData'))
+    day_dict = dict()
     for file in all_day_file:
-        print(file)
-        file_df = pd.read_csv(file, error_bad_lines=False, index_col=False)
-        df = df.append(file_df)
-    grouped = df.groupby(['esn']).apply(calc_day_data)
-    df = pd.DataFrame(grouped)
-    df['date'] = day
-    df.to_csv(os.path.join(setting.data_path, 'day', day + r".csv"), index=False)
+        date = os.path.split(file)[1].split("\\")[-1].split('_')[0]
+        if date not in day_dict:
+            day_dict[date] = list()
+        day_dict[date].append(file)
+    return day_dict
+
+
+def get_main_cell(series):
+    count_map = Counter(list(filter(lambda x: x != setting.INVALID_STRING, series)))
+    count = 0
+    main_cell = "-"
+    for cell, nums in count_map.items():
+        if nums > count:
+            count = nums
+            main_cell = cell
+    return main_cell
 
 
 def day_extract():
     compress.empty_folder(os.path.join(setting.data_path, 'day'))
-    all_day = get_all_day()
-    for day in all_day:
-        merge_day_data(day)
+    day_dict = get_day_df_dict()
+    merge_day_data(day_dict)
 
 
 if __name__ == '__main__':

@@ -56,14 +56,15 @@ from src.cpePaser import PotXGBoost
 from src.potThread import uiThread
 import sys
 from src.postEva import post_evaluate
-from src.ui.Layout import Layout
-from src.ui.SettingMap import SettingMap
-from src.ui.Windows import Windows
-from src.ui import InnerFrame
-from src.ui import MainFrame
-from src.ui import OuterFrame
-from src.ui import Root
-from src.ui import ScrollableFrame
+from src.ui.layout import Layout
+from src.ui.setting_map import SettingMap
+from src.ui.windows import Windows
+from src.ui import inner_frame
+from src.ui import main_frame
+from src.ui import outer_frame
+from src.ui import root
+from src.ui import scrollable_frame
+from src.logger_setting import my_logger
 
 sys.setrecursionlimit(100)
 

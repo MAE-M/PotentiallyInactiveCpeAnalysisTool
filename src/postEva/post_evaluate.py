@@ -26,6 +26,9 @@ from src.postEva.exper_paser import exper_paser
 from src.postEva.capacity_paser import capacity_paser
 from src.postEva.capacity_paser import cell
 
+from src.logger_setting.my_logger import get_logger
+
+logger = get_logger()
 
 engineer_map = {}
 threshold_map = {}
@@ -50,7 +53,6 @@ def post_evaluation():
 
 
 def calc_post_eva(df):
-    print(df.columns)
     esn = df['esn'].values
 
     total_download = np.sum(df['TotalDownload'].values) / setting.mb
@@ -84,6 +86,7 @@ def exper_evaluate_with_suite():
     result_df.loc[result_df['IMEI'] == 0, 'IMEI'] = '-'
     result_df.loc[result_df['MSISDN'] == 0, 'MSISDN'] = '-'
     result_df.loc[result_df['CPE Model'] == 0, 'CPE Model'] = '-'
+    result_df.loc[result_df['IMSI'] == 0, 'CPE Model'] = '-'
     result_df.replace(setting.INVALID_VALUE, '-').to_csv(os.path.join(setting.result_path, 'post_analysis_result.csv'),
                                                          index=False)
 
@@ -162,7 +165,7 @@ def statistic_reson_by_cell(df):
     for index, row in df.iterrows():
         if (type(row['eNodeB ID']) == float and math.isnan(row['eNodeB ID'])) or (
                 type(row['Cell ID']) == float and math.isnan(row['Cell ID'])) or str(row['eNodeB ID']) == '-' or str(
-                row['Cell ID']) == '-':
+            row['Cell ID']) == '-':
             continue
         key = (float(row['eNodeB ID']), float(row['Cell ID']))
         if key in cell_map.keys():

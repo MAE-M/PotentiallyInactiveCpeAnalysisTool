@@ -25,6 +25,10 @@ import multiprocessing
 import numpy as np
 from src.potThread import potThread
 
+from src.logger_setting.my_logger import get_logger
+
+logger = get_logger()
+
 
 def get_min_month():
     all_day = day_extract.get_all_day()
@@ -33,7 +37,6 @@ def get_min_month():
         month_list.append(day[:6])
     month_list = list(set(month_list))
     month_list.sort()
-    print(str(month_list[0]) + "01")
     return str(month_list[0]) + "01"
 
 
@@ -105,7 +108,7 @@ def get_train_week():
     week_list = []
     for i in range(len(week_set)):
         if i < len(week_set) - 1:
-            week_list.append((i+1, week_set[i], week_set[i+1]))
+            week_list.append((i + 1, week_set[i], week_set[i + 1]))
     return week_list
 
 
@@ -117,11 +120,11 @@ def get_pre_week():
     week_list = []
     for i in range(len(week_set)):
         if i < len(week_set) - 1:
-            week_list.append((i+1, week_set[i], week_set[i+1]))
+            week_list.append((i + 1, week_set[i], week_set[i + 1]))
     return week_list
 
 
-def test():
+def my_test():
     compress.empty_folder(os.path.join(setting.data_path, 'trainWeek'))
     compress.empty_folder(os.path.join(setting.data_path, 'predictWeek'))
     train_week = get_train_week()
@@ -142,5 +145,5 @@ if __name__ == "__main__":
     # print len(get_train_week())
     # print time.localtime(time.time())
     multiprocessing.freeze_support()
-    test()
+    my_test()
     print(time.localtime(time.time()))

@@ -14,6 +14,9 @@
 #  limitations under the License.
 
 import os
+
+import numpy
+
 from src.compress import compress
 import pandas as pd
 import re
@@ -21,8 +24,12 @@ from src.setting import setting
 import time
 import math
 
+from src.logger_setting.my_logger import get_logger
+
+logger = get_logger()
 
 PAT_DATA = re.compile(r"\d+.+\d+")
+PAT_NUM = re.compile(r"\d+")
 PAT_DATA_LOW = re.compile(r"-?\d+")
 PAT_CQI0 = re.compile(r"CQI0.+?(\d+)")
 PAT_CQI1 = re.compile(r"CQI1.+?(\d+)")
@@ -36,7 +43,6 @@ def get_extract_data():
 
 
 def extract_data_thread(file):
-    print(file)
     if not os.stat(file).st_size > 0:
         return
     df = pd.DataFrame(columns=setting.parameter_json["extract_data_columns"]).rename(
@@ -47,7 +53,7 @@ def extract_data_thread(file):
         file_df['collectTime'] = pd.to_datetime(file_df['collectTime'])
         file_df['collectTime'] = file_df.collectTime.dt.strftime('%Y-%m-%d %H:%M:%S')
         date = str(file_df['collectTime'].values[0]).split(" ")[0].replace("-", "").replace("/", "")
-        df = merge_data(df, file_df)
+        df = df.append(file_df)
         df = day_data_operate(df)
         now_time = str(int(round(time.time() * 10000)))
         df.to_csv(os.path.join(setting.data_path, 'extractData', date + '_' + now_time + r".csv"), index=False)
@@ -57,15 +63,16 @@ def day_data_operate(df):
     col_names = df.columns
     col_i_need = list(filter(lambda c: get_column(c), col_names))
     df = df[col_i_need]
-    df.loc[:, 'TotalDownload'] = df.apply(lambda x: get_traffic(x['TotalDownload'], PAT_DATA), axis=1)
-    df.loc[:, 'TotalUpload'] = df.apply(lambda x: get_traffic(x['TotalUpload'], PAT_DATA), axis=1)
-    df.loc[:, 'MaxDLThroughput'] = df.apply(lambda x: get_throughput(x['MaxDLThroughput'], PAT_DATA), axis=1)
-    df.loc[:, 'MaxULThroughput'] = df.apply(lambda x: get_throughput(x['MaxULThroughput'], PAT_DATA), axis=1)
-    df.loc[:, 'RSRP'] = df.apply(lambda x: get_number(x['RSRP'], PAT_DATA_LOW), axis=1)
-    df.loc[:, 'RSRQ'] = df.apply(lambda x: get_number(x['RSRQ'], PAT_DATA_LOW), axis=1)
-    df.loc[:, 'RSSI'] = df.apply(lambda x: get_number(x['RSSI'], PAT_DATA_LOW), axis=1)
-    df.loc[:, 'SINR'] = df.apply(lambda x: get_number(x['SINR'], PAT_DATA_LOW), axis=1)
-    df.loc[:, 'CQI'] = df.apply(lambda x: get_cqi(x['CQI']), axis=1)
+    df['TotalDownload'] = df['TotalDownload'].apply(lambda x: get_traffic(x, PAT_DATA))
+    df['TotalUpload'] = df['TotalUpload'].apply(lambda x: get_traffic(x, PAT_DATA))
+    df['MaxDLThroughput'] = df['MaxDLThroughput'].apply(lambda x: get_throughput(x, PAT_DATA))
+    df['MaxULThroughput'] = df['MaxULThroughput'].apply(lambda x: get_throughput(x, PAT_DATA))
+    df['RSRP'] = df['RSRP'].apply(lambda x: get_number(x, PAT_DATA_LOW))
+    df['RSRQ'] = df['RSRQ'].apply(lambda x: get_number(x, PAT_DATA_LOW))
+    df['RSSI'] = df['RSSI'].apply(lambda x: get_number(x, PAT_DATA_LOW))
+    df['SINR'] = df['SINR'].apply(lambda x: get_number(x, PAT_DATA_LOW))
+    df['CQI'] = df['CQI'].apply(get_cqi)
+    df.loc[:, 'ECGI'] = df.apply(lambda x: get_ecgi(x['ECGI'], PAT_ECGI, x['ENODEBID'], x['CELLID']), axis=1)
     return df
 
 
@@ -74,11 +81,6 @@ def get_data(value):
         return ''
     else:
         return value
-
-
-def merge_data(df1, df2):
-    df = df1.append(df2)
-    return df
 
 
 def get_column(column):
@@ -139,6 +141,21 @@ def get_throughput(data, pat):
         return result
 
 
+def get_ecgi(ecgi, pat, enodebid, cellid):
+    result = pat.findall(str(ecgi))
+    if result:
+        rel_ecgi = PAT_NUM.findall(result[0])
+        return str(int(rel_ecgi[0])) + "-" + str(int(rel_ecgi[1]))
+    elif pat.findall(str(cellid)):
+        result = pat.findall(str(cellid))
+        rel_ecgi = PAT_NUM.findall(result[0])
+        return str(int(rel_ecgi[0])) + "-" + str(int(rel_ecgi[1]))
+    elif (type(enodebid) == float and math.isnan(enodebid)) or (type(cellid) == float and math.isnan(cellid)):
+        return setting.INVALID_STRING
+    else:
+        return str(int(enodebid)) + "-" + str(int(cellid))
+
+
 def get_cqi(data):
     if 'CQI' in str(data):
         result = get_number(data, PAT_CQI0)
@@ -157,7 +174,6 @@ def get_cqi(data):
 
 def extract_data():
     all_files = get_extract_data()
-    print(all_files)
     for file in all_files:
         extract_data_thread(file)
 

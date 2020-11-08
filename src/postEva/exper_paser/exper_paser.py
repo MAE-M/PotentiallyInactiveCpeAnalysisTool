@@ -18,6 +18,11 @@ from src.postEva import util
 from src.setting import setting
 
 
+from src.logger_setting.my_logger import get_logger
+
+logger = get_logger()
+
+
 def get_expericece_data():
     exper_df = util.get_df(setting.exper_data_path)[setting.parameter_json["experience_df_extract_columns"]].rename(
         columns=setting.parameter_json["experience_df_columns_rename"])

@@ -17,6 +17,10 @@
 import os
 import pandas as pd
 
+from src.logger_setting.my_logger import get_logger
+
+logger = get_logger()
+
 
 def get_file(path):
     return os.path.join(path, os.listdir(path)[0])

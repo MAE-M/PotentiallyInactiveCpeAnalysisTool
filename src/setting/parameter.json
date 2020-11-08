@@ -99,7 +99,10 @@
     "IMSI",
     "IMEI",
     "MSISDN",
-    "HostNumberOfEntries"
+    "HostNumberOfEntries",
+    "ECGI",
+    "ENODEBID",
+    "CELLID"
   ],
   "extract_filter_columns":[
     "collectTime",
@@ -119,7 +122,10 @@
     "IMSI",
     "IMEI",
     "MSISDN",
-    "HostNumberOfEntries"
+    "HostNumberOfEntries",
+    "ECGI",
+    "ENODEBID",
+    "CELLID"
   ],
   "xgboost_columns":[
     "esn",
@@ -206,7 +212,9 @@
     "ulTrafficWeek9Compare8",
     "ulTrafficWeek8Compare7",
     "connectTimeWeek9Compare8",
-    "connectTimeWeek8Compare7"
+    "connectTimeWeek8Compare7",
+    "ENODEBID",
+    "CELLID"
   ],
   "train_pre_columns":[
     "esn",
@@ -293,7 +301,9 @@
     "ulTrafficWeek9Compare8",
     "ulTrafficWeek8Compare7",
     "connectTimeWeek9Compare8",
-    "connectTimeWeek8Compare7"
+    "connectTimeWeek8Compare7",
+    "ENODEBID",
+    "CELLID"
   ],
   "post_eva_from_day_column_name":[
     "esn",

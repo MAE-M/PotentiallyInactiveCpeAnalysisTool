@@ -20,6 +20,10 @@ from datetime import timedelta
 import time
 weekSet = []
 
+from src.logger_setting.my_logger import get_logger
+
+logger = get_logger()
+
 
 def get_week_day(date):
     week = datetime.strptime(date, "%Y%m%d").weekday()

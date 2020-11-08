@@ -14,7 +14,7 @@
 #  limitations under the License.
 
 
-from src.ui.ScrollableFrame import ScrollableFrame
+from src.ui.scrollable_frame import ScrollableFrame
 
 
 class MainFrame:

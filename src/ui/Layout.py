@@ -33,6 +33,10 @@ import time
 from src.potThread import uiThread
 from src.postEva import post_evaluate
 
+from src.logger_setting.my_logger import get_logger
+
+logger = get_logger()
+
 
 class Layout:
     def __init__(self, inner_frame, setting_map, input_path, thread_flag):
@@ -86,47 +90,12 @@ class Layout:
                       sticky=setting_map['button_sticky']
                       )
 
-        # Evaluation Threshold
-        Label(inner_frame,
-              text="Evaluation Threshold:",
-              font=setting_map['label_font'],
-              anchor=setting_map['label_anchor'],
-              ).grid(row=1,
-                     column=0,
-                     ipadx=setting_map['label_width'],
-                     ipady=setting_map['label_height'],
-                     sticky=setting_map['label_sticky']
-                     )
-
-        self.thre_entry = Entry(inner_frame,
-                                font=setting_map['entry_font'],
-                                state=DISABLED,
-                                )
-        self.thre_entry.grid(row=1,
-                             column=1,
-                             ipadx=setting_map['entry_width'],
-                             ipady=setting_map['entry_height'],
-                             )
-
-        Button(inner_frame,
-               text='Import file',
-               command=self.import_thre_data,
-               font=setting_map['button_font'],
-               ).grid(row=1,
-                      column=2,
-                      ipadx=setting_map['button_ipadx'],
-                      ipady=setting_map['button_ipady'],
-                      padx=setting_map['button_padx'],
-                      pady=setting_map['button_pady'],
-                      sticky=setting_map['button_sticky']
-                      )
-
         # CPE Log Data
         Label(inner_frame,
               text="CPE Log Data:",
               font=setting_map['label_font'],
               anchor=setting_map['label_anchor'],
-              ).grid(row=2,
+              ).grid(row=1,
                      column=0,
                      ipadx=setting_map['label_width'],
                      ipady=setting_map['label_height'],
@@ -137,7 +106,7 @@ class Layout:
                                font=setting_map['entry_font'],
                                state=DISABLED,
                                )
-        self.cpe_entry.grid(row=2,
+        self.cpe_entry.grid(row=1,
                             column=1,
                             ipadx=setting_map['entry_width'],
                             ipady=setting_map['entry_height'],
@@ -147,7 +116,7 @@ class Layout:
                text='Import file',
                command=self.import_cpe_data,
                font=setting_map['button_font'],
-               ).grid(row=2,
+               ).grid(row=1,
                       column=2,
                       ipadx=setting_map['button_ipadx'],
                       ipady=setting_map['button_ipady'],
@@ -161,12 +130,47 @@ class Layout:
               text="WTTx Suite Data:",
               font=setting_map['label_font'],
               anchor=setting_map['label_anchor'],
+              ).grid(row=2,
+                     column=0,
+                     ipadx=setting_map['label_width'],
+                     ipady=setting_map['label_height'],
+                     sticky=setting_map['label_sticky']
+                     )
+
+        # Evaluation Threshold
+        Label(inner_frame,
+              text="Evaluation Threshold:",
+              font=setting_map['label_font'],
+              anchor=setting_map['label_anchor'],
               ).grid(row=3,
                      column=0,
                      ipadx=setting_map['label_width'],
                      ipady=setting_map['label_height'],
                      sticky=setting_map['label_sticky']
                      )
+
+        self.thre_entry = Entry(inner_frame,
+                                font=setting_map['entry_font'],
+                                state=DISABLED,
+                                )
+        self.thre_entry.grid(row=3,
+                             column=1,
+                             ipadx=setting_map['entry_width'],
+                             ipady=setting_map['entry_height'],
+                             )
+
+        Button(inner_frame,
+               text='Import file',
+               command=self.import_thre_data,
+               font=setting_map['button_font'],
+               ).grid(row=3,
+                      column=2,
+                      ipadx=setting_map['button_ipadx'],
+                      ipady=setting_map['button_ipady'],
+                      padx=setting_map['button_padx'],
+                      pady=setting_map['button_pady'],
+                      sticky=setting_map['button_sticky']
+                      )
 
         # Experience Insight Data
         Label(inner_frame,
@@ -359,18 +363,6 @@ class Layout:
         compress.empty_folder(path)
         self.copy_file(source, path)
 
-    def import_pm_data(self):
-        self.import_data(self.pm_entry, ('csv', '*.csv'))
-
-    def import_en_data(self):
-        self.import_data(self.engineer_entry, ('csv', '*.csv'))
-
-    def import_cm_data(self):
-        self.import_data(self.cm_entry, ('zip', '*.zip'))
-
-    def import_package_data(self):
-        self.import_data(self.package_entry, ('csv', '*.csv'))
-
     def import_thre_data(self):
         self.import_data(self.thre_entry, ('csv', '*.csv'))
 
@@ -390,10 +382,6 @@ class Layout:
 
     def reset(self):
         self.ratChoice.current(0)
-        self.pm_entry.delete(0, END)
-        self.engineer_entry.delete(0, END)
-        self.cm_entry.delete(0, END)
-        self.package_entry.delete(0, END)
         self.thre_entry.delete(0, END)
         self.cpe_entry.delete(0, END)
         self.exper_entry.delete(0, END)
@@ -403,7 +391,7 @@ class Layout:
     def check(self):
         if self.cpe_entry.get() and self.thre_entry.get() and self.exper_entry.get() and self.capa_entry.get():
             return 2
-        elif self.cpe_entry.get()  and not self.thre_entry.get() \
+        elif self.cpe_entry.get() and not self.thre_entry.get() \
                 and not self.exper_entry.get() and not self.capa_entry.get():
             return 3
         else:
@@ -429,19 +417,42 @@ class Layout:
 
     def xg_pre(self):
         self.show_log(timeOpt.get_time() + ": Begin analyzing.")
+        start = time.time()
         compress.decompress_cpe_data()
+        end = time.time()
+        result = end - start
         self.show_log(timeOpt.get_time() + ": Finish unzip cpe file.")
+        self.show_log("1. unzip cpe file cost time：" + str(result) + "s")
+
+        start = time.time()
         extract_data.extract_data()
+        end = time.time()
+        result = end - start
         self.show_log(timeOpt.get_time() + ": Finish extract cpe data.")
+        self.show_log("2. extract cpe data cost time：" + str(result) + "s")
+
+        start = time.time()
         day_extract.day_extract()
+        end = time.time()
+        result = end - start
         self.show_log(timeOpt.get_time() + ": Finish build cpe day data.")
+        self.show_log("3. build cpe day data cost time：" + str(result) + "s")
+
+        start = time.time()
         feature_build.run()
+        end = time.time()
+        result = end - start
         self.show_log(timeOpt.get_time() + ": Finish build cpe features data.")
+        self.show_log("4. build cpe features data cost time：" + str(result) + "s")
+
+        start = time.time()
         PotXGBoost.get_xgboost_predict_result()
+        end = time.time()
+        result = end - start
         self.show_log(timeOpt.get_time() + ": Finish predict Potentially inactive CPE.")
+        self.show_log("5. predict Potentially inactive CPE cost time：" + str(result) + "s")
 
     def cpe_analysis(self, status):
-        print(status)
         try:
             uiThread.UiThread(self.check_health)
             if status[0] == 3:

@@ -13,6 +13,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+
 import zipfile
 import gzip
 import os
@@ -20,6 +21,9 @@ from src.setting import setting
 import re
 import time
 
+from src.logger_setting.my_logger import get_logger
+
+logger = get_logger()
 cpe_unzip_path = os.path.join(setting.data_path, 'unzipCpe')
 
 
@@ -27,12 +31,6 @@ def decompress_cpe_data():
     cpe_zip_file = os.path.join(setting.cpe_data_path, os.listdir(setting.cpe_data_path)[0])
     empty_folder(cpe_unzip_path)
     decompress(cpe_zip_file, cpe_unzip_path)
-
-
-def decompress_cm_data():
-    cm_zip_file = os.path.join(setting.cm_data_path, list(filter(lambda x: x.endswith('zip'),
-                                                                 os.listdir(setting.cm_data_path)))[0])
-    decompress(cm_zip_file, setting.cm_data_path)
 
 
 def decompress(file, path):
@@ -53,7 +51,6 @@ def decompress(file, path):
 def compress_result():
     f = zipfile.ZipFile(os.path.join(setting.data_path, 'result.zip'), 'w', zipfile.ZIP_DEFLATED)
     for dirpath, dirnames, filenames in os.walk(setting.result_path):
-        print(filenames)
         for filename in filenames:
             f.write(os.path.join(dirpath, filename), filename)
     f.close()
@@ -62,9 +59,6 @@ def compress_result():
 def empty_folder(path):
     if os.path.exists(path):
         for root, dirs, files in os.walk(path, topdown=False):
-            print(root)
-            print(dirs)
-            print(files)
             for name in files:
                 os.remove(os.path.join(root, name))
             for name in dirs:

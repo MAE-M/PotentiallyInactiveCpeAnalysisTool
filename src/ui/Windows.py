@@ -14,10 +14,10 @@
 #  limitations under the License.
 
 
-from src.ui.InnerFrame import InnerFrame
-from src.ui.MainFrame import MainFrame
-from src.ui.OuterFrame import OuterFrame
-from src.ui.Root import Root
+from src.ui.inner_frame import InnerFrame
+from src.ui.main_frame import MainFrame
+from src.ui.outer_frame import OuterFrame
+from src.ui.root import Root
 
 
 class Windows:

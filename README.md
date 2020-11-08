@@ -27,7 +27,7 @@ Make sure you have installed [pandas 1.0.3+](https://pandas.pydata.org/) and [xg
 * Build py file to pyd file by using cython  
 ```python build\build_pyd.py build_ext --inplace```
 * Packaged into exe file  
-```pyinstaller -F src\ui\PotentiallyInactiveCpeAnalysisTool.py -p venv\Lib\site-packages --add-data=venv\Scripts\xgboost;xgboost  --noconsole```
+```pyinstaller -F src\ui\potentially_inactive_cpe_analysis_tool.py -p venv\Lib\site-packages --add-data=venv\Scripts\xgboost;xgboost  --noconsole```
 
 ## Run Potentially inactive CPE analysis tool
 

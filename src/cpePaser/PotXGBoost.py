@@ -30,14 +30,14 @@ class PotXGBoost:
         self.features_importance = ''
 
     def train(self, data):
-        train_data = data.drop(['esn', 'churnLabel'], axis=1)
+        train_data = data.drop(['esn', 'churnLabel', 'ENODEBID', 'CELLID'], axis=1)
         label = data['churnLabel']
         dtain = xgb.DMatrix(train_data, label=label)
         self.model = xgb.train(PotXGBoost.params, dtain)
         self.features_importance = self.model.get_fscore()
 
     def predict(self, data):
-        pre_data = data.drop(['esn', 'churnLabel'], axis=1)
+        pre_data = data.drop(['esn', 'churnLabel', 'ENODEBID', 'CELLID'], axis=1)
         dpredict = xgb.DMatrix(pre_data)
         result = self.model.predict(dpredict)
         result_df = pd.DataFrame(result).rename(columns={0: "churnLabel"})
